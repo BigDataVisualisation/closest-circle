@@ -1,24 +1,17 @@
 var data = [];
 var ready = false;
 
-//mappen der Stadtnamen
-var yScale = d3.scalePoint();
-
-//mappen der population
-//funktioniert ähnlich wie map() von p5
-var xScale = d3.scaleLinear();
-
-var chartWidth = 400;
-var chartHeight = 200;
+//zur einfachheit hats hier keine scales
 
 function setup() {
   createCanvas(800, 600);
 
-  d3.csv("population.csv", function (d) {
-
+  noLoop();
+  d3.csv("circles.csv", function (d) {
     return {
-      population: +d.population,
-      city: d.city,
+      x: +d.x,
+      y: +d.y,
+      value: +d.value,
     };
   }).then(function (csv) {
     data = csv;
@@ -36,36 +29,43 @@ function draw() {
     background(250);
   }
 
-  var maxPop = d3.max(data,function(d){
-    return d.population;
-  });
-  xScale.domain([0,maxPop])
-    .range([0,chartWidth]);
-
-  var cities = d3.set(data,function(d){
-    return d.city;
-  }).values();
-
-  //cities is eine list der stadtnamen
-  console.log(cities);
-
-  var barHeight = 30;
-
-  yScale.domain(cities)
-    .range([0,chartHeight-barHeight]);
+  var closest = getClosest(data,mouseX,mouseY);
 
   for (var i = 0; i < data.length; i++) {
     var d = data[i];
-  
-    var barWidth = xScale(d.population);
-    var y = yScale(d.city);
+    
+    var x = d.x;
+    var y = d.y;
+    var r = d.value;
 
-    fill('#035E72');
-    noStroke();
-    rect(0,y,barWidth,barHeight);
-
-    fill(0);
-    textAlign(LEFT,CENTER);
-    text(d.city,barWidth+10,y+0.5*barHeight);
+    if(d == closest){
+      fill(255,0,0);
+    }
+    else{
+      fill(0);
+    }
+    ellipse(x,y,r,r);
   }
 }
+
+function mouseMoved() {
+  redraw();
+}
+
+function getClosest(arr,x,y){
+  var thresholdDist = 50;
+  var closest = null;
+  var minDist = Number.MAX_VALUE;
+
+  for (let i = 0; i < arr.length; i++) {
+    var d = arr[i];
+    var distance = dist(x,y,d.x,d.y);
+    if(distance<minDist){
+      minDist = distance;
+      closest = d;
+    }
+  }
+
+  return minDist < thresholdDist ? closest : null;
+}
+
