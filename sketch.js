@@ -1,61 +1,30 @@
 var data = [];
 var ready = false;
 
-//will map weekday (Monday, Tuesday,...) to y position
-var dayScale = d3.scalePoint();
+//mappen der Stadtnamen
+var yScale = d3.scalePoint();
 
-//maps hours (0,1,2,3,...,23) to x position
-var hourScale = d3.scaleLinear();
+//mappen der population
+//funktioniert ähnlich wie map() von p5
+var xScale = d3.scaleLinear();
 
-//maps count to a circle radius
-var rScale = d3.scaleSqrt();
-
-//maps category (Home, Outside) to color
-var colorScale = d3.scaleOrdinal();
-
-var maxCount = 0;
+var chartWidth = 400;
+var chartHeight = 200;
 
 function setup() {
   createCanvas(800, 600);
 
-  d3.csv("aweekofmirrors.csv", function (d) {
+  d3.csv("population.csv", function (d) {
 
     return {
-      time: +d.Time,
-      weekday: d.Weekday,
-      count: +d.Count,
-      category: d.Category
+      population: +d.population,
+      city: d.city,
     };
   }).then(function (csv) {
     data = csv;
     ready = true;
-
-    //create scales
-    //get all weekdays
-    var weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    // var weekdays = d3.set(data,function(d){
-    //   return d.weekday;
-    // }).values();
-
-    dayScale.domain(weekdays)
-      .range([0, 500]);
-
-    hourScale.domain([0, 23])
-      .range([0, 700]);
-
-    //get the largest count
-    let maxCount = d3.max(data, function (d) {
-      return d.count;
-    });
-
-    rScale.domain([0, maxCount])
-      .range([0, 70]);
-
-    colorScale.domain(['Home', 'Outside'])
-      .range(['steelblue', 'grey']);
-
+    redraw();
   });
-
 }
 
 function draw() {
@@ -64,26 +33,39 @@ function draw() {
     background(255, 0, 0);
     return;
   } else {
-    background(255);
+    background(250);
   }
+
+  var maxPop = d3.max(data,function(d){
+    return d.population;
+  });
+  xScale.domain([0,maxPop])
+    .range([0,chartWidth]);
+
+  var cities = d3.set(data,function(d){
+    return d.city;
+  }).values();
+
+  //cities is eine list der stadtnamen
+  console.log(cities);
+
+  var barHeight = 30;
+
+  yScale.domain(cities)
+    .range([0,chartHeight-barHeight]);
 
   for (var i = 0; i < data.length; i++) {
     var d = data[i];
-    var x = hourScale(d.time);
-    var y = dayScale(d.weekday);
+  
+    var barWidth = xScale(d.population);
+    var y = yScale(d.city);
 
-    //center point
-    stroke(0);
-    ellipse(x, y, 5, 5);
+    fill('#035E72');
+    noStroke();
+    rect(0,y,barWidth,barHeight);
 
-    //circle for number of mirror views (count)
-
-    if (d.count > 0) {
-      var r = rScale(d.count);
-      var c = colorScale(d.category);
-      noFill();
-      stroke(c);
-      ellipse(x, y, r, r);
-    }
+    fill(0);
+    textAlign(LEFT,CENTER);
+    text(d.city,barWidth+10,y+0.5*barHeight);
   }
 }
